@@ -46,7 +46,7 @@ wss.on('connection', (ws) => {
       // Check if the message is to join a note room
       if (data.type === 'join_note') {
         currentNoteId = data.noteId;
-	username = data.username;
+	//username = data.username;
         // Ensure the room exists
         if (!noteRooms[currentNoteId]) {
           noteRooms[currentNoteId] = new Set();
@@ -54,7 +54,7 @@ wss.on('connection', (ws) => {
 
         // Add the client to the specific note room
         noteRooms[currentNoteId].add(ws);
-        broadcast(currentNoteId, `${username} has joined the room`); // Notify others
+        //broadcast(currentNoteId, `${username} has joined the room`); // Notify others
 
       } else if (data.type === 'note_update') {
         // Broadcast the updated markdown only to clients in the same note room
@@ -76,7 +76,7 @@ wss.on('connection', (ws) => {
     // Remove the client from the room on disconnection
     if (currentNoteId && noteRooms[currentNoteId]) {
       noteRooms[currentNoteId].delete(ws);
-      broadcast(currentNoteId, `${username} has left the room`); // Notify others
+      //broadcast(currentNoteId, `${username} has left the room`); // Notify others
 
       // Clean up the room if empty
       if (noteRooms[currentNoteId].size === 0) {
@@ -87,11 +87,5 @@ wss.on('connection', (ws) => {
   });
 });
 
-function broadcast(room, message) {
-    if (noteRooms[room]) {
-        noteRooms[room].forEach(user => {
-            user.send(JSON.stringify({ type: 'notification', message })); // Send notification
-        });
-    }
-}
+
 
