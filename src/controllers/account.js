@@ -19,7 +19,7 @@ const createAccount = async (request, response) => {
     });
 
     if (user) {
-      return response.status(200).json({
+      return response.status(409).json({
         message: "An account with this username/email already exists."
       });
     }
@@ -35,7 +35,7 @@ const createAccount = async (request, response) => {
     });
 
     response.status(200).json({
-      message: "Registration successful! Welcome aboard!"
+      message: "Registration successful!"
     });
   } catch (error) {
     response.status(500).json({
@@ -48,15 +48,7 @@ const updateAccount = async (request, response) => {
   try {
     const userId = request.params.userId;
     const { currentValue, newValue, currentPassword, newPassword } = request.body;
-
-    // Check if the user exist in the database
     const user = await Users.findByPk(userId);
-
-    if (user == null) {
-      return response.status(200).json({
-        message: "User not found in the database"
-      });
-    }
 
     // Update the user in the database
     if (currentValue && newValue) {
@@ -70,7 +62,7 @@ const updateAccount = async (request, response) => {
         });
 
         if (!valid) {
-          return response.status(200).json({
+          return response.status(401).json({
             message: "The current email you entered is incorrect. Please try again."
           });
         }
@@ -82,7 +74,7 @@ const updateAccount = async (request, response) => {
         });
 
         if (exist) {
-          return response.status(200).json({
+          return response.status(409).json({
             message: "Email already exist"
           });
         }
@@ -102,7 +94,7 @@ const updateAccount = async (request, response) => {
         });
 
         if (!valid) {
-          return response.status(200).json({
+          return response.status(401).json({
             message: "The current username you entered is incorrect. Please try again."
           });
         }
@@ -115,7 +107,7 @@ const updateAccount = async (request, response) => {
         });
 
         if (exist) {
-          return response.status(200).json({
+          return response.status(409).json({
             message: "Username already exist."
           });
         }
@@ -145,7 +137,7 @@ const updateAccount = async (request, response) => {
           }
         });
       } else {
-        return response.status(200).json({
+        return response.status(401).json({
           message: "The current password you entered is incorrect. Please try again."
         });
       }
@@ -173,7 +165,7 @@ const deleteAccount = async (request, response) => {
     });
 
     if (user == null) {
-      return response.status(200).json({
+      return response.status(404).json({
         message: "User does not exist"
       });
     }
@@ -217,6 +209,7 @@ const deleteAccount = async (request, response) => {
       message: "Account deleted successfully"
     });
   } catch (error) {
+    console.log(error);
     response.status(500).json({
       error: "Unable to delete the user"
     });
@@ -227,7 +220,6 @@ const fetchUsers = async (request, response) => {
   try {
     // Fetch all users in the database
     const userId = request.params.userId;
-
     const users = await Users.findAll({
       where: {
         user_id: {
@@ -240,13 +232,7 @@ const fetchUsers = async (request, response) => {
     const usernames = users.map(user => user.username);
 
     // Check if the users exist in the database
-    if (usernames) {
-      response.status(200).json(usernames);
-    } else {
-      return response.status(200).json({
-        message: "No users found in the database"
-      });
-    }
+    response.status(200).json(usernames);
   } catch (error) {
     response.status(500).json({
       error: "Unable to fetch users"
@@ -295,13 +281,7 @@ const fetchUsersWithAccess = async (request, response) => {
       };
     });
 
-    if (usersWithAccess) {
-      response.status(200).json(usersWithAccess);
-    } else {
-      return response.status(200).json({
-        message: "Users not found in the database"
-      });
-    }
+    response.status(200).json(usersWithAccess);
   } catch (error) {
     response.status(500).json({
       error: "Unable to fetch user"
@@ -313,27 +293,14 @@ const grantAccess = async (request, response) => {
   try {
     const data = request.params;
 
-    // Check if the user exist in the database
     const user = await Users.findOne({
       where: {
         username: data['userId']
-      }
+      },
+      attributes:['user_id', 'email']
     });
 
-    if (user == null) {
-      return response.status(200).json({
-        message: "User does not exist"
-      });
-    }
-
-    // Check if the note exist in the database
     const note = await db.Notes.findByPk(data['noteId']);
-
-    if (note == null) {
-      return response.status(200).json({
-        message: "Note does not exist"
-      });
-    }
 
     if (data['access'] == 'edit') {
       await db.EditAccess.create({
@@ -350,22 +317,23 @@ const grantAccess = async (request, response) => {
     }
 
     // Send the notification to the user
-    const msg = {
-      to: user['dataValues']['email'],
-      from: '26526182@sun.ac.za',
-      subject: 'Access Granted to Note',
-      text: `You have been granted ${data['access']} access to note "${note['dataValues']['title']}".`,
-      html: `<strong>You have been granted ${data['access']} access to note "${note['dataValues']['title']}".</strong>`
-    };
+    // const msg = {
+    //   to: user['dataValues']['email'],
+    //   from: '26526182@sun.ac.za',
+    //   subject: 'Access Granted to Note',
+    //   text: `You have been granted ${data['access']} access to note "${note['dataValues']['title']}".`,
+    //   html: `<strong>You have been granted ${data['access']} access to note "${note['dataValues']['title']}".</strong>`
+    // };
 
-    await sgMail.send(msg);
+    // await sgMail.send(msg);
 
     response.status(200).json({
-      message: "User granted access successfully and notification sent to their email"
+      message: "Access granted successfully."
     });
   } catch (error) {
+    console.log(error);
     response.status(500).json({
-      error: "Unable to grant the user access to the note"
+      error: "Unable to grant access."
     });
   }
 }
@@ -373,29 +341,13 @@ const grantAccess = async (request, response) => {
 const revokeAccess = async (request, response) => {
   try {
     const data = request.params;
-    console.log(data);
 
-    // Check if the user exist in the database
     const user = await Users.findOne({
       where: {
         username: data['userId']
-      }
+      },
+      attributes:['user_id', 'email']
     });
-
-    if (user == null) {
-      return response.status(200).json({
-        message: "User does not exist"
-      });
-    }
-
-    // Check if the note exist in the database
-    const note = await db.Notes.findByPk(data['noteId']);
-
-    if (note == null) {
-      return response.status(200).json({
-        message: "Note does not exist"
-      });
-    }
 
     if (data['access'] == 'edit') {
       await db.EditAccess.destroy({
@@ -414,11 +366,11 @@ const revokeAccess = async (request, response) => {
     }
 
     response.status(200).json({
-      message: "Access revoked successfully"
+      message: "Access revoked successfully."
     });
   } catch (error) {
     response.status(500).json({
-      error: "Unable to revoke the user access from the note"
+      error: "Unable to revoke access."
     });
   }
 }

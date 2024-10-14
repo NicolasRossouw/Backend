@@ -42,5 +42,5 @@ const verifyAccessToken = async (request, response, next) => {
 
 module.exports = {
     createAccessToken,
-    verifyAccessToken
+    verifyAccessToken,
 }

@@ -17,7 +17,7 @@ const fetchLogin = async (request, response) => {
     });
 
     if (user == null) {
-      return response.status(200).json({
+      return response.status(404).json({
         message: "The email address you entered is not associated with any account"
       });
     }
@@ -37,13 +37,13 @@ const fetchLogin = async (request, response) => {
         username: user['dataValues']['username']
       });
     } else {
-      return response.status(200).json({
+      return response.status(401).json({
         message: "The password you entered is incorrect. Please try again."
       });
     }
   } catch (error) {
     response.status(500).json({
-      error: "Unable to login data"
+      error: "Unable to login"
     });
   }
 }
@@ -61,10 +61,12 @@ const fetchForgotPassword = async (request, response) => {
     })
 
     if (user == null) {
-      return response.status(200).json({
+      return response.status(404).json({
         message: "The email address you entered is not associated with any account"
       });
     } else {
+      const userId = user.user_id;
+
       // Create OTP
       const otp = Math.floor(100000 + Math.random() * 900000);
       const expiration = new Date(Date.now() + 3600000);
@@ -80,7 +82,7 @@ const fetchForgotPassword = async (request, response) => {
         }
       );
   
-      const resetLink = `http://localhost:5173/resetpassword?email=${user.email}`;
+      const resetLink = `http://localhost:5173/reset-password?email=${user.email}`;
 
       // Create the response msg
       const msg = {
@@ -97,7 +99,6 @@ const fetchForgotPassword = async (request, response) => {
       });
     }
   } catch (error) {
-    console.log(error);
     return response.status(500).json({
       message: 'There was an error processing your request. Please try again later.'
     });
@@ -108,7 +109,6 @@ const fetchResetPassword = async (request, response) => {
   try {
     const email = request.body.email;
     const { otp, newPassword } = request.body;
-
     const user = await users.findOne({
       where: {
         "email": email,
@@ -120,14 +120,13 @@ const fetchResetPassword = async (request, response) => {
     });
 
     if (user == null) {
-      return response.status(200).json({
+      return response.status(404).json({
         message: 'OTP is invalid or expired. Please request a new one.'
       });
     }
 
-    // Hash the new password
+    // hash this new password
     const hashedPassword = await decrypt.hash(newPassword);
-
     await users.update({
       "password": hashedPassword,
       "reset_otp": null,
@@ -137,6 +136,7 @@ const fetchResetPassword = async (request, response) => {
         "user_id": user.user_id
       }
     });
+    
 
     return response.status(200).json({
       message: 'Password reset successful!'

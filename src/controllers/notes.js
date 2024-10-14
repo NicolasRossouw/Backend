@@ -13,7 +13,7 @@ const createNote = async (request, response) => {
     });
 
     if (note) {
-      return response.status(200).json({
+      return response.status(409).json({
         message: "Note already exist"
       });
     }
@@ -43,15 +43,6 @@ const updateNote = async (request, response) => {
   try {
     const noteId = request.params.noteId;
     const { title, content, category, last_edit_at } = request.body;
-
-    // Check if the note exist in the database
-    const note = await db.Notes.findByPk(noteId);
-
-    if (note == null) {
-      return response.status(200).json({
-        message: "Note does not exist"
-      });
-    }
 
     // Update the note in the database
     if (title) {
@@ -100,19 +91,6 @@ const updateNote = async (request, response) => {
 const deleteNote = async (request, response) => {
   try {
     const noteId = request.params.noteId;
-
-    // Check if the note exist in the database
-    const note = await db.Notes.findOne({
-      where: {
-        "note_id": noteId
-      }
-    });
-
-    if (note == null) {
-      return response.status(200).json({
-        message: "Note does not exist"
-      });
-    }
 
     await db.EditAccess.destroy({
       where: {
@@ -185,13 +163,7 @@ const fetchNotes = async (request, response) => {
       return note;
     });
 
-    if (notesWithPermissions) {
-      response.status(200).json(notesWithPermissions);
-    } else {
-      response.status(200).json({
-        message: "No notes found in the database"
-      });
-    }
+    response.status(200).json(notesWithPermissions);
   } catch (error) {
     response.status(500).json({
       error: "Unable to fetch notes"
@@ -205,13 +177,7 @@ const fetchNote = async (request, response) => {
     const noteId = request.params.noteId;
     const note = await db.Notes.findByPk(noteId);
 
-    if (note) {
-      response.status(200).json(note['dataValues']['content']);
-    } else {
-      response.status(200).json({
-        message: "Note does not exit"
-      });
-    }
+    response.status(200).json(note['dataValues']['content']);
   } catch (error) {
     response.status(500).json({
       error: "Unable to fetch notes"
