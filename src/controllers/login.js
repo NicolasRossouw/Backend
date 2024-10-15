@@ -82,7 +82,7 @@ const fetchForgotPassword = async (request, response) => {
         }
       );
   
-      const resetLink = `https://backend-production-2a40.up.railway.app/reset-password?email=${user.email}`;
+      const resetLink = `https://frontend-production-d29c.up.railway.app/reset-password?email=${user.email}`;
 
       // Create the response msg
       const msg = {
