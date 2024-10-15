@@ -316,16 +316,16 @@ const grantAccess = async (request, response) => {
       });
     }
 
-     Send the notification to the user
-     const msg = {
-       to: user['dataValues']['email'],
-       from: '26526182@sun.ac.za',
-       subject: 'Access Granted to Note',
-       text: `You have been granted ${data['access']} access to note "${note['dataValues']['title']}".`,
-       html: `<strong>You have been granted ${data['access']} access to note "${note['dataValues']['title']}".</strong>`
-     };
+    // Send the notification to the user
+    // const msg = {
+     //  to: user['dataValues']['email'],
+     //  from: '26526182@sun.ac.za',
+     //  subject: 'Access Granted to Note',
+     //  text: `You have been granted ${data['access']} access to note "${note['dataValues']['title']}".`,
+     //  html: `<strong>You have been granted ${data['access']} access to note "${note['dataValues']['title']}".</strong>`
+    // };
 
-     await sgMail.send(msg);
+     //await sgMail.send(msg);
 
     response.status(200).json({
       message: "Access granted successfully."
